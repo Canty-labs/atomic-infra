@@ -1,4 +1,4 @@
-# Canty Validator – Canton Escrow Bridge
+# Canty - Infrastructure Built for Atomic Precision
 
 This repository contains the **Canty Validator** setup —  
 a full end-to-end escrow workflow running on **Canton**, bridged optionally to **Ethereum (Sepolia)** for on-chain settlement mirroring.
