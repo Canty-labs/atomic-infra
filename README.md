@@ -1,31 +1,38 @@
-# Canty - Infrastructure Built for Atomic Precision
+# Canty – Infrastructure Built for Atomic Precision
 
-This repository contains the **Canty Validator** setup —  
-a full end-to-end escrow workflow running on **Canton**, Atomic Precision optionally to **Ethereum (Sepolia)** for on-chain settlement mirroring.
+This repository contains the **Canty Validator Infrastructure** —  
+a full end-to-end escrow workflow running on **Canton**, designed for **atomic precision** and **synchronized reliability** across distributed systems.  
+Optionally, it supports on-chain settlement mirroring to **Ethereum (Sepolia)**.
+
+---
 
 ## 🏗️ Overview
-The system demonstrates how cross-ledger deals can be coordinated between **Canton smart contracts** and **Ethereum contracts** (StablecoinEscrow + MockUSDT).
+The system demonstrates how multi-party agreements and asset transfers  
+can be coordinated atomically using **Canton smart contracts** and external systems.
 
-It includes:
-💠 **DAML Contracts** — Escrow, Token, Parties templates
-🧠 **Flask Backend** — REST API between Canton and Ethereum
-⚙️ **Canton Configuration** — `canton.conf` for local participant + domain setup
-🧪 **Demo Client** — simple test runner for end-to-end flow validation
+### It includes:
+- 💠 **DAML Contracts** — Escrow, Token, and Parties templates  
+- 🧠 **Flask Backend** — REST API layer for validator orchestration  
+- ⚙️ **Canton Configuration** — `canton.conf` for local participant + domain setup  
+- 🧪 **Demo Client** — test runner for end-to-end workflow validation  
 
+---
 
 ## 🔧 Quick Start
 
+```bash
 # 1. Build the DAML package
 daml build
 
 # 2. Start Canton
 canton -c canton.conf
 
-# 3. Run the Flask 
+# 3. Run the Flask validator service
 python app.py
 
 export ETH_RPC_URL="https://sepolia.infura.io/v3/..."
 export ETH_BROKER_PRIVATE_KEY="your_private_key"
+
 ## Project Structure
 bash
 Copy code
@@ -62,6 +69,6 @@ Web3.py (Ethereum integration)
 Sepolia Testnet
 
 📜 License
-Private / Internal © 2025 Canty Labs.
+Private / Internal – © 2025 Canty Labs.
 
 
