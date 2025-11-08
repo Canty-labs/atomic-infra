@@ -1,0 +1,33 @@
+module Token where
+
+import DA.Assert ()
+
+-- Basic cash template used for Escrow transactions
+template Cash
+  with
+    issuer   : Party
+    owner    : Party
+    currency : Text
+    amount   : Decimal
+  where
+    signatory issuer
+    observer  owner
+
+    -- Transfer ownership of funds to a new owner
+    choice Transfer : ContractId Cash
+      with newOwner : Party
+      controller owner
+      do
+        create this with owner = newOwner
+
+
+    -- Split cash into two separate contracts
+    choice Split : (ContractId Cash, ContractId Cash)
+      with left : Decimal
+      controller owner
+      do
+        assertMsg "left must be > 0 and < amount" (left > 0.0 && left < amount)
+        let right = amount - left
+        cLeft  <- create this with amount = left
+        cRight <- create this with amount = right
+        return (cLeft, cRight)

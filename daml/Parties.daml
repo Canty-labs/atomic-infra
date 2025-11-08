@@ -1,0 +1,47 @@
+module Parties where
+
+import Daml.Script
+
+-- Maps human-readable alias (e.g. "Alice-1") to an actual Party
+template PartyAlias
+  with
+    admin : Party      -- Party controlling the record (Escrow-1)
+    alias : Text       -- e.g., "Alice-1"
+    party : Party      -- The real Party on the ledger
+  where
+    signatory admin
+
+-- Script that creates the parties and their aliases
+setupAliases : Script ()
+setupAliases = script do
+  alice  <- allocatePartyWithHint "Alice-1"  (PartyIdHint "Alice-1")
+  bob    <- allocatePartyWithHint "Bob-1"    (PartyIdHint "Bob-1")
+  bank   <- allocatePartyWithHint "Bank-1"   (PartyIdHint "Bank-1")
+  escrow <- allocatePartyWithHint "Escrow-1" (PartyIdHint "Escrow-1")
+
+  -- All aliases are administered by Escrow-1
+  submit escrow do
+    createCmd PartyAlias with
+      admin = escrow
+      alias = "Alice-1"
+      party = alice
+
+  submit escrow do
+    createCmd PartyAlias with
+      admin = escrow
+      alias = "Bob-1"
+      party = bob
+
+  submit escrow do
+    createCmd PartyAlias with
+      admin = escrow
+      alias = "Bank-1"
+      party = bank
+
+  submit escrow do
+    createCmd PartyAlias with
+      admin = escrow
+      alias = "Escrow-1"
+      party = escrow
+
+  pure ()

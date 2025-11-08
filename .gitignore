@@ -1,0 +1,75 @@
+# =====================================
+# Python
+# =====================================
+__pycache__/
+*.py[cod]
+*.pyo
+*.log
+*.sqlite3
+*.db
+*.pid
+*.gz
+log/
+
+# =====================================
+# Virtual Environments
+# =====================================
+env/
+venv/
+.venv/
+
+# =====================================
+# DAML Build Artifacts
+# =====================================
+.daml/
+.daml/dist/
+.daml/interfaces/
+.daml/dependencies/
+.daml/package-database/
+setup-package-db.lock
+
+# =====================================
+# Node / Frontend
+# =====================================
+node_modules/
+dist/
+build/
+.cache/
+*.tsbuildinfo
+
+# =====================================
+# System / Editor
+# =====================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# =====================================
+# Secrets & Environment
+# =====================================
+.env
+*.env
+.env.*
+*.pem
+*.key
+*.crt
+
+# =====================================
+# Compiled / Binary Files
+# =====================================
+*.exe
+*.dll
+*.so
+*.dylib
+*.bak
+
+# =====================================
+# Miscellaneous
+# =====================================
+nohup.out
+*.tmp
+*.bak
+*.orig
+*.rej

@@ -1,0 +1,145 @@
+module Escrow where
+
+import Token
+
+-- State 1: Funds locked by the escrow agent for a specific deal
+template Escrow
+  with
+    agent   : Party
+    buyer   : Party
+    seller  : Party
+    item    : Text
+    price   : Decimal
+    locked  : ContractId Cash
+  where
+    signatory agent
+    observer  buyer, seller
+
+    -- Buyer confirms -> moves to Pending state
+    choice BuyerConfirm : ContractId Pending
+      controller buyer
+      do
+        create Pending with
+          agent  = agent
+          buyer  = buyer
+          seller = seller
+          item   = item
+          price  = price
+          locked = locked
+
+    -- Cancel before seller confirmation (agent executes refund)
+    choice Cancel : ()
+      controller agent
+      do
+        exercise locked Transfer with newOwner = buyer
+        return ()
+
+-- State 2: Waiting for seller confirmation
+template Pending
+  with
+    agent  : Party
+    buyer  : Party
+    seller : Party
+    item   : Text
+    price  : Decimal
+    locked : ContractId Cash
+  where
+    signatory agent
+    observer  buyer, seller
+
+    -- Seller confirms -> moves to Ready state
+    choice SellerConfirm : ContractId Ready
+      controller seller
+      do
+        create Ready with
+          agent  = agent
+          buyer  = buyer
+          seller = seller
+          item   = item
+          price  = price
+          locked = locked
+
+    -- Refund requested before confirmation
+    choice RequestRefund : ()
+      controller agent
+      do
+        exercise locked Transfer with newOwner = buyer
+        return ()
+
+-- State 3: Ready for fund release
+template Ready
+  with
+    agent  : Party
+    buyer  : Party
+    seller : Party
+    item   : Text
+    price  : Decimal
+    locked : ContractId Cash
+  where
+    signatory agent
+    observer  buyer, seller
+
+    -- Combined confirmation: transfers funds to seller and completes the deal
+    choice ConfirmDeal : ContractId Completed
+      controller agent
+      do
+        exercise locked Transfer with newOwner = seller
+        create Completed with
+          agent  = agent
+          buyer  = buyer
+          seller = seller
+          item   = item
+          price  = price
+
+    -- Manual release to seller
+    choice ReleaseToSeller : ()
+      controller agent
+      do
+        exercise locked Transfer with newOwner = seller
+        return ()
+
+    -- Refund to buyer
+    choice RefundToBuyer : ()
+      controller agent
+      do
+        exercise locked Transfer with newOwner = buyer
+        return ()
+
+-- State 4: Deal completed
+template Completed
+  with
+    agent  : Party
+    buyer  : Party
+    seller : Party
+    item   : Text
+    price  : Decimal
+  where
+    signatory agent
+    observer  buyer, seller
+
+-- Offer template for cross-ledger deals (e.g., Canton ↔ Ethereum bridge)
+template Offer
+  with
+    agent      : Party        -- Escrow agent
+    buyer      : Party        -- Buyer in Canton
+    seller     : Party        -- Seller in Canton
+    ccAmount   : Decimal      -- Token quantity
+    unitPrice  : Decimal      -- Price per unit (USDT)
+    totalPrice : Decimal      -- Total price (USDT)
+    buyerEth   : Text         -- Ethereum buyer address
+    sellerEth  : Text         -- Ethereum seller address
+  where
+    signatory agent
+    observer buyer, seller
+
+    -- Seller accepts the offer (Escrow+Deal handled server-side)
+    choice Accept : ()
+      controller seller
+      do
+        archive self
+
+    -- Seller rejects the offer (simply archives the offer)
+    choice Reject : ()
+      controller seller
+      do
+        archive self

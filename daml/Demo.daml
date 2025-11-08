@@ -1,0 +1,75 @@
+module Demo where
+
+import Daml.Script
+import Token
+import Escrow
+import Parties
+
+-- End-to-end script that simulates a full Escrow transaction.
+-- Also creates PartyAlias contracts for the web UI.
+setupEndToEnd : Script ()
+setupEndToEnd = script do
+  -- Allocate parties with friendly aliases
+  alice <- allocatePartyWithHint "Alice-1" (PartyIdHint "Alice-1")
+  bob   <- allocatePartyWithHint "Bob-1"   (PartyIdHint "Bob-1")
+  bank  <- allocatePartyWithHint "Bank-1"  (PartyIdHint "Bank-1")
+  agent <- allocatePartyWithHint "Escrow-1" (PartyIdHint "Escrow-1")
+
+  -- Register PartyAliases (for the UI)
+  submit agent do
+    createCmd PartyAlias with
+      admin = agent
+      alias = "Alice-1"
+      party = alice
+
+  submit agent do
+    createCmd PartyAlias with
+      admin = agent
+      alias = "Bob-1"
+      party = bob
+
+  submit agent do
+    createCmd PartyAlias with
+      admin = agent
+      alias = "Bank-1"
+      party = bank
+
+  submit agent do
+    createCmd PartyAlias with
+      admin = agent
+      alias = "Escrow-1"
+      party = agent
+
+  -- Bank issues cash to Alice
+  cashCid <- submit bank do
+    createCmd Cash with
+      issuer   = bank
+      owner    = alice
+      currency = "USD"
+      amount   = 100.0
+
+  -- Alice transfers funds to the escrow agent (locking funds)
+  lockedCid <- submit alice do
+    exerciseCmd cashCid Transfer with
+      newOwner = agent
+
+  -- Escrow agent creates an Escrow contract
+  escrowCid <- submit agent do
+    createCmd Escrow with
+      agent  = agent
+      buyer  = alice
+      seller = bob
+      item   = "Laptop"
+      price  = 100.0
+      locked = lockedCid
+
+  -- Buyer confirms -> Pending state
+  pendingCid <- submit alice do
+    exerciseCmd escrowCid BuyerConfirm
+
+  -- Seller confirms -> Ready state
+  readyCid <- submit bob do
+    exerciseCmd pendingCid SellerConfirm
+
+  debug ("Escrow is READY: " <> show readyCid)
+  pure ()

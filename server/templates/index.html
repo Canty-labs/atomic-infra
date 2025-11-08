@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Canty Atomic Transactions – Offers & Escrow</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: #0f172a;
+        color: #e5e7eb;
+        margin: 0;
+        padding: 2rem;
+      }
+      h1,
+      h2 {
+        margin-top: 0;
+      }
+      .card {
+        background: #020617;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #1e293b;
+      }
+      label {
+        display: block;
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+        color: #cbd5f5;
+      }
+      input {
+        width: 100%;
+        padding: 0.4rem 0.6rem;
+        border-radius: 8px;
+        border: 1px solid #1e293b;
+        background: #020617;
+        color: #e5e7eb;
+        box-sizing: border-box;
+      }
+      input[readonly] {
+        opacity: 0.7;
+      }
+      .row {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      .col {
+        flex: 1 1 180px;
+      }
+      button {
+        border: none;
+        border-radius: 999px;
+        padding: 0.6rem 1.4rem;
+        cursor: pointer;
+        font-weight: 600;
+        margin-top: 0.75rem;
+      }
+      .btn-primary {
+        background: #4f46e5;
+        color: white;
+      }
+      .btn-primary:disabled {
+        background: #4b5563;
+        cursor: not-allowed;
+      }
+      .btn-secondary {
+        background: #0f172a;
+        color: #e5e7eb;
+        border: 1px solid #4b5563;
+      }
+      .btn-secondary:disabled {
+        background: #111827;
+        color: #6b7280;
+        border-color: #374151;
+        cursor: not-allowed;
+      }
+      pre {
+        background: #020617;
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        border: 1px solid #1e293b;
+        max-height: 320px;
+      }
+      .badge {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+      .badge-ok {
+        background: #16a34a22;
+        color: #4ade80;
+        border: 1px solid #16a34a;
+      }
+      .badge-bad {
+        background: #7f1d1d22;
+        color: #fca5a5;
+        border: 1px solid #b91c1c;
+      }
+      a {
+        color: #38bdf8;
+      }
+      .offer-item {
+        border-radius: 8px;
+        border: 1px solid #1f2937;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        background: #020617;
+        font-size: 0.9rem;
+      }
+      .offer-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+      }
+      .offer-meta {
+        font-size: 0.8rem;
+        color: #9ca3af;
+      }
+    </style>
+
+    <!-- ethers.js for browser (v6) -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.10.0/dist/ethers.umd.min.js"></script>
+  </head>
+  <body>
+    <h1>Canty Atomic Transactions – Canton ↔ Ethereum</h1>
+
+    <!-- Card 1: Buyer creates Offer -->
+    <div class="card">
+      <h2>Create Atomic Transaction Offer – Buyer</h2>
+      <p style="margin-top: 0; font-size: 0.95rem">
+        Here the buyer defines what they want to buy and at what price. At this
+        stage <strong>no funds are locked</strong> and no Ethereum transaction is
+        created – only an open offer on Canton.
+      </p>
+      <form id="offerForm">
+        <div class="row">
+          <div class="col">
+            <label for="buyer">Buyer (Canton party)</label>
+            <input id="buyer" value="Alice-1" />
+          </div>
+          <div class="col">
+            <label for="seller">Seller (Canton party)</label>
+            <input id="seller" value="Bob-1" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top: 1rem">
+          <div class="col">
+            <label for="ccAmount">CC amount</label>
+            <input id="ccAmount" type="number" value="100" step="1" />
+          </div>
+          <div class="col">
+            <label for="unitPrice">Unit price (USDT)</label>
+            <input id="unitPrice" type="number" value="0.16" step="0.01" />
+          </div>
+          <div class="col">
+            <label for="totalPrice">Total amount (USDT)</label>
+            <input id="totalPrice" type="number" readonly />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top: 1rem">
+          <div class="col">
+            <label for="buyerEth">Buyer Ethereum address</label>
+            <input
+              id="buyerEth"
+              placeholder="0x..."
+              value="0x26FE9C8c6FCb0bb00e5e9b475237A299A3907671"
+            />
+          </div>
+          <div class="col">
+            <label for="sellerEth">Seller Ethereum address</label>
+            <input
+              id="sellerEth"
+              placeholder="0x..."
+              value="0x26FE9C8c6FCb0bb00e5e9b475237A299A3907671"
+            />
+          </div>
+        </div>
+
+        <button class="btn-primary" type="submit">
+          Create Offer on Canton
+        </button>
+        <div id="offerStatus" style="margin-top: 0.5rem; font-size: 0.9rem"></div>
+      </form>
+    </div>
+
+    <!-- Card 2: Seller views & accepts offers -->
+    <div class="card">
+      <h2>Approve Offer – Seller</h2>
+      <p style="margin-top: 0; font-size: 0.95rem">
+        Here the seller logs in, sees incoming offers, and chooses which offer
+        to accept. Once approved:
+        <strong
+          >an Escrow contract is created on Canton + a Deal is opened on
+          Ethereum</strong
+        >, but the buyer has not paid yet on Ethereum.
+      </p>
+
+      <div class="row" style="align-items: flex-end">
+        <div class="col">
+          <label for="sellerParty">Seller (Canton party)</label>
+          <input id="sellerParty" value="Bob-1" />
+        </div>
+        <div class="col">
+          <button id="loadOffersBtn" class="btn-secondary" type="button">
+            Load offers for seller
+          </button>
+        </div>
+      </div>
+
+      <div id="offersList" style="margin-top: 1rem; font-size: 0.9rem">
+        <!-- Offers will be loaded here -->
+      </div>
+    </div>
+
+    <!-- Card 3: Deal Status & technical references (hidden content with toggle) -->
+    <div class="card">
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 0.75rem;
+        "
+      >
+        <h2 style="margin: 0; font-size: 1rem">
+          Technical details (Canton & Ethereum)
+        </h2>
+        <button
+          type="button"
+          id="toggleDealDetails"
+          class="btn-secondary"
+          style="margin-top: 0; padding: 0.3rem 0.9rem; font-size: 0.8rem"
+        >
+          Show
+        </button>
+      </div>
+
+      <div id="dealDetails" style="display: none; margin-top: 0.75rem">
+        <div style="margin-bottom: 0.5rem">
+          <span>Canton:</span>
+          <span id="statusCanton" class="badge badge-bad">—</span>
+        </div>
+        <div style="margin-bottom: 0.5rem">
+          <span>Ethereum:</span>
+          <span id="statusEth" class="badge badge-bad">—</span>
+        </div>
+
+        <div style="margin-top: 0.5rem; font-size: 0.9rem">
+          <div style="margin-bottom: 0.25rem">
+            <strong>Canton Escrow contract ID:</strong>
+            <code><span id="escrowCid">—</span></code>
+          </div>
+          <div style="margin-bottom: 0.25rem">
+            <strong>Ethereum Deal ID (bytes32):</strong>
+            <code><span id="dealId">—</span></code>
+          </div>
+          <div style="margin-bottom: 0.25rem">
+            <strong>Ethereum tx (createDeal):</strong>
+            <span id="ethTx">—</span>
+            <span id="ethTxLink"></span>
+          </div>
+        </div>
+
+        <h3 style="margin-top: 1rem; font-size: 0.9rem">Raw JSON (debug)</h3>
+        <pre id="rawJson">{}</pre>
+      </div>
+    </div>
+
+    <!-- Card 4: Ethereum payment -->
+    <div class="card">
+      <h2>Payment on Ethereum (MetaMask) – Buyer</h2>
+      <p style="margin-top: 0; font-size: 0.95rem">
+        After the seller approves the offer and a Deal is created on Ethereum,
+        the buyer clicks here to perform
+        <strong>approve + deposit</strong> for the USDT on Sepolia.
+        MetaMask will ask to sign two transactions.
+      </p>
+
+      <button id="ethPayBtn" class="btn-secondary" disabled>
+        🔐 Approve &amp; Deposit on Ethereum (MetaMask)
+      </button>
+
+      <div id="ethPayStatus" style="margin-top: 0.75rem; font-size: 0.9rem"></div>
+    </div>
+
+    <script>
+      // ========= Ethereum config (must match backend) =========
+      const SEPOLIA_CHAIN_ID = "0xaa36a7"; // 11155111 in hex
+      const ESCROW_ADDRESS =
+        "0x2d0DD2a577b5a204824702908D1B891584576946"; // StablecoinEscrow
+      const TOKEN_ADDRESS =
+        "0x337188FF8fE6BcC7316cC5c4f8202196777a4E64"; // MockUSDT
+      const TOKEN_DECIMALS = 6;
+
+      // Minimal ERC20 ABI
+      const TOKEN_ABI = [
+        {
+          inputs: [
+            { internalType: "address", name: "spender", type: "address" },
+            { internalType: "uint256", name: "value", type: "uint256" },
+          ],
+          name: "approve",
+          outputs: [{ internalType: "bool", name: "", type: "bool" }],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [{ internalType: "address", name: "account", type: "address" }],
+          name: "balanceOf",
+          outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "symbol",
+          outputs: [{ internalType: "string", name: "", type: "string" }],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "decimals",
+          outputs: [{ internalType: "uint8", name: "", type: "uint8" }],
+          stateMutability: "view",
+          type: "function",
+        },
+      ];
+
+      // Minimal StablecoinEscrow ABI (deposit only)
+      const ESCROW_ABI = [
+        {
+          inputs: [{ internalType: "bytes32", name: "dealId", type: "bytes32" }],
+          name: "deposit",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+      ];
+
+      // ========= DOM =========
+      const offerForm = document.getElementById("offerForm");
+      const ccAmountInput = document.getElementById("ccAmount");
+      const unitPriceInput = document.getElementById("unitPrice");
+      const totalPriceInput = document.getElementById("totalPrice");
+      const offerStatusEl = document.getElementById("offerStatus");
+
+      const sellerPartyInput = document.getElementById("sellerParty");
+      const loadOffersBtn = document.getElementById("loadOffersBtn");
+      const offersListEl = document.getElementById("offersList");
+
+      const statusCantonEl = document.getElementById("statusCanton");
+      const statusEthEl = document.getElementById("statusEth");
+      const escrowCidEl = document.getElementById("escrowCid");
+      const ethTxEl = document.getElementById("ethTx");
+      const ethTxLinkEl = document.getElementById("ethTxLink");
+      const dealIdEl = document.getElementById("dealId");
+      const rawJsonEl = document.getElementById("rawJson");
+
+      const ethPayBtn = document.getElementById("ethPayBtn");
+      const ethPayStatus = document.getElementById("ethPayStatus");
+
+      const toggleDealDetailsBtn = document.getElementById("toggleDealDetails");
+      const dealDetailsEl = document.getElementById("dealDetails");
+
+      // Store current deal info for MetaMask payment
+      let currentDeal = null;
+
+      // ========= Toggle for technical details card =========
+      toggleDealDetailsBtn.addEventListener("click", () => {
+        const isVisible = dealDetailsEl.style.display === "block";
+        dealDetailsEl.style.display = isVisible ? "none" : "block";
+        toggleDealDetailsBtn.textContent = isVisible ? "Show" : "Hide";
+      });
+
+      // ========= Total amount calculation =========
+      function updateTotalPrice() {
+        const amount = parseFloat(ccAmountInput.value || "0");
+        const unitPrice = parseFloat(unitPriceInput.value || "0");
+        const total = amount * unitPrice;
+        if (!isNaN(total)) {
+          totalPriceInput.value = total.toFixed(2);
+        }
+      }
+
+      ccAmountInput.addEventListener("input", updateTotalPrice);
+      unitPriceInput.addEventListener("input", updateTotalPrice);
+      updateTotalPrice();
+
+      // ========= Create Offer =========
+      offerForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const submitBtn = offerForm.querySelector("button[type='submit']");
+        const oldText = submitBtn.textContent;
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Creating offer...";
+        offerStatusEl.textContent = "";
+        offerStatusEl.style.color = "#e5e7eb";
+        offerStatusEl.style.fontWeight = "normal";
+        ethPayStatus.textContent = "";
+
+        try {
+          const buyer = document.getElementById("buyer").value.trim();
+          const seller = document.getElementById("seller").value.trim();
+          const buyerEth = document.getElementById("buyerEth").value.trim();
+          const sellerEth = document.getElementById("sellerEth").value.trim();
+          const ccAmount = parseFloat(ccAmountInput.value || "0");
+          const unitPrice = parseFloat(unitPriceInput.value || "0");
+
+          if (!buyer || !seller) {
+            alert("Buyer and seller (Canton parties) are required.");
+            return;
+          }
+          if (!buyerEth || !sellerEth) {
+            alert("Buyer and seller Ethereum addresses are required.");
+            return;
+          }
+          if (!ccAmount || !unitPrice) {
+            alert("Please check CC amount and unit price.");
+            return;
+          }
+
+          const res = await fetch("/offer_create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              buyer,
+              seller,
+              cc_amount: ccAmount,
+              unit_price: unitPrice,
+              buyer_eth: buyerEth,
+              seller_eth: sellerEth,
+            }),
+          });
+
+          const data = await res.json();
+          rawJsonEl.textContent = JSON.stringify(data, null, 2);
+
+          if (!res.ok) {
+            offerStatusEl.textContent = "Error creating offer.";
+            offerStatusEl.style.color = "#f87171";
+            offerStatusEl.style.fontWeight = "600";
+            return;
+          }
+
+          offerStatusEl.textContent = "Offer successfully created on Canton.";
+          offerStatusEl.style.color = "#4ade80";
+          offerStatusEl.style.fontWeight = "600";
+        } catch (err) {
+          console.error(err);
+          alert("Error connecting to the server.");
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = oldText;
+        }
+      });
+
+      // ========= Load offers for seller (reusable) =========
+      async function loadOffersForSeller() {
+        const sellerParty = sellerPartyInput.value.trim() || "Bob-1";
+        offersListEl.textContent = "Loading offers...";
+        offersListEl.style.color = "#e5e7eb"; // reset color
+        ethPayStatus.textContent = "";
+
+        try {
+          const res = await fetch(`/offers/${encodeURIComponent(sellerParty)}`);
+          const data = await res.json();
+
+          if (!res.ok) {
+            offersListEl.textContent = "Error loading offers.";
+            offersListEl.style.color = "#f87171";
+            console.error(data);
+            return;
+          }
+
+          renderOffers(data.offers || []);
+        } catch (err) {
+          console.error(err);
+          offersListEl.textContent = "Error loading offers.";
+          offersListEl.style.color = "#f87171";
+        }
+      }
+
+      loadOffersBtn.addEventListener("click", loadOffersForSeller);
+
+      function renderOffers(offers) {
+        offersListEl.innerHTML = "";
+        offersListEl.style.color = "#e5e7eb"; // normal text for list
+        if (!offers.length) {
+          offersListEl.textContent = "No offers available for this seller.";
+          return;
+        }
+
+        offers.forEach((offer) => {
+          const div = document.createElement("div");
+          div.className = "offer-item";
+
+          const header = document.createElement("div");
+          header.className = "offer-header";
+          header.innerHTML = `<span><strong>Offer</strong></span>`;
+
+          const meta = document.createElement("div");
+          meta.className = "offer-meta";
+          meta.textContent = `Buyer: ${shortParty(
+            offer.buyer
+          )} • Seller: ${shortParty(offer.seller)}`;
+
+          const details = document.createElement("div");
+          details.innerHTML = `
+            CC amount: <strong>${offer.ccAmount}</strong>,
+            unit price: <strong>${offer.unitPrice} USDT</strong>,
+            total: <strong>${offer.totalPrice} USDT</strong><br/>
+            Buyer ETH: <code>${offer.buyerEth}</code><br/>
+            Seller ETH: <code>${offer.sellerEth}</code>
+          `;
+
+          const btnAccept = document.createElement("button");
+          btnAccept.className = "btn-primary";
+          btnAccept.textContent = "Seller accepts (Escrow + Deal)";
+          btnAccept.style.marginTop = "0.5rem";
+          btnAccept.addEventListener("click", () => {
+            acceptOffer(offer.contractId);
+          });
+
+          const btnReject = document.createElement("button");
+          btnReject.className = "btn-secondary";
+          btnReject.textContent = "Seller rejects (cancel offer)";
+          btnReject.style.marginTop = "0.5rem";
+          btnReject.style.marginLeft = "0.5rem";
+          btnReject.addEventListener("click", () => {
+            rejectOffer(offer.contractId);
+          });
+
+          div.appendChild(header);
+          div.appendChild(meta);
+          div.appendChild(details);
+          div.appendChild(btnAccept);
+          div.appendChild(btnReject);
+
+          offersListEl.appendChild(div);
+        });
+      }
+
+      function shortParty(p) {
+        if (!p) return "";
+        const idx = p.indexOf("::");
+        return idx === -1 ? p : p.slice(0, idx);
+      }
+
+      // ========= Seller accepts offer =========
+      async function acceptOffer(offerCid) {
+        ethPayStatus.textContent = "";
+        ethPayBtn.disabled = true;
+        statusCantonEl.textContent = "—";
+        statusCantonEl.className = "badge badge-bad";
+        statusEthEl.textContent = "—";
+        statusEthEl.className = "badge badge-bad";
+        escrowCidEl.textContent = "—";
+        ethTxEl.textContent = "—";
+        ethTxLinkEl.textContent = "";
+        dealIdEl.textContent = "—";
+        rawJsonEl.textContent = "{}";
+
+        try {
+          offersListEl.textContent = "Accepting offer...";
+          offersListEl.style.color = "#e5e7eb";
+
+          const res = await fetch("/offer_accept", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ offer_cid: offerCid }),
+          });
+
+          const data = await res.json();
+          rawJsonEl.textContent = JSON.stringify(data, null, 2);
+
+          if (!res.ok) {
+            offersListEl.textContent =
+              "Error accepting the offer. See Raw JSON above.";
+            offersListEl.style.color = "#f87171";
+            offersListEl.style.fontWeight = "600";
+            return;
+          }
+
+          offersListEl.textContent =
+            "Offer accepted: escrow created on Canton and Deal created on Ethereum.";
+          offersListEl.style.color = "#4ade80";
+          offersListEl.style.fontWeight = "600";
+
+          // Canton OK
+          statusCantonEl.textContent = "OK";
+          statusCantonEl.className = "badge badge-ok";
+
+          const escrow = data.escrow?.result;
+          if (escrow && escrow.contractId) {
+            escrowCidEl.textContent = escrow.contractId;
+          }
+
+          const ethBridge = data.eth_bridge;
+          const offerPayload = data.offer?.result?.payload;
+
+          if (ethBridge && ethBridge.dealId) {
+            statusEthEl.textContent = "OK";
+            statusEthEl.className = "badge badge-ok";
+
+            dealIdEl.textContent = ethBridge.dealId;
+            ethTxEl.textContent = ethBridge.tx_hash || "—";
+            if (ethBridge.tx_hash) {
+              const url =
+                "https://sepolia.etherscan.io/tx/" + ethBridge.tx_hash;
+              ethTxLinkEl.innerHTML = `(<a href="${url}" target="_blank">Etherscan</a>)`;
+            }
+
+            const totalPrice = offerPayload
+              ? parseFloat(offerPayload.totalPrice)
+              : ethBridge.amount / 10 ** TOKEN_DECIMALS;
+
+            currentDeal = {
+              dealId: ethBridge.dealId,
+              buyerEth: offerPayload ? offerPayload.buyerEth : null,
+              sellerEth: offerPayload ? offerPayload.sellerEth : null,
+              amountUnits: ethBridge.amount,
+              totalPrice: totalPrice,
+            };
+
+            ethPayBtn.disabled = false;
+            ethPayStatus.textContent =
+              "Deal is ready for Ethereum payment. Buyer can click the button below.";
+          } else {
+            statusEthEl.textContent = "No bridge";
+            statusEthEl.className = "badge badge-bad";
+            currentDeal = null;
+            ethPayBtn.disabled = true;
+          }
+        } catch (err) {
+          console.error(err);
+          offersListEl.textContent = "Error accepting the offer.";
+          offersListEl.style.color = "#f87171";
+        }
+      }
+
+      // ========= Seller rejects offer =========
+      async function rejectOffer(offerCid) {
+        ethPayStatus.textContent = "";
+        ethPayBtn.disabled = true;
+
+        try {
+          offersListEl.textContent = "Rejecting offer...";
+          offersListEl.style.color = "#e5e7eb";
+
+          const res = await fetch("/offer_reject", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ offer_cid: offerCid }),
+          });
+
+          const data = await res.json();
+          rawJsonEl.textContent = JSON.stringify(data, null, 2);
+
+          if (!res.ok) {
+            offersListEl.textContent =
+              "Error rejecting the offer. See Raw JSON above.";
+            offersListEl.style.color = "#f87171";
+            offersListEl.style.fontWeight = "600";
+            return;
+          }
+
+          offersListEl.textContent =
+            "Offer rejected: it was cancelled on Canton (no Escrow, no Ethereum Deal).";
+          offersListEl.style.color = "#f97316";
+          offersListEl.style.fontWeight = "600";
+
+          await loadOffersForSeller();
+        } catch (err) {
+          console.error(err);
+          offersListEl.textContent = "Error rejecting the offer.";
+          offersListEl.style.color = "#f87171";
+        }
+      }
+
+      // ========= MetaMask + approve + deposit =========
+      async function approveAndDepositWithMetaMask() {
+        if (!currentDeal) {
+          alert("No active deal. Seller must accept an offer first.");
+          return;
+        }
+
+        if (!window.ethereum) {
+          alert("MetaMask not found in this browser.");
+          return;
+        }
+
+        ethPayStatus.textContent = "Connecting to MetaMask...";
+        ethPayBtn.disabled = true;
+
+        try {
+          const { ethers } = window;
+          const provider = new ethers.BrowserProvider(window.ethereum);
+
+          await provider.send("eth_requestAccounts", []);
+          const signer = await provider.getSigner();
+          const userAddress = await signer.getAddress();
+
+          const chainId = await window.ethereum.request({
+            method: "eth_chainId",
+          });
+          if (chainId !== SEPOLIA_CHAIN_ID) {
+            ethPayStatus.textContent =
+              "Wallet is not on Sepolia. Trying to switch network...";
+            try {
+              await window.ethereum.request({
+                method: "wallet_switchEthereumChain",
+                params: [{ chainId: SEPOLIA_CHAIN_ID }],
+              });
+            } catch (switchErr) {
+              ethPayStatus.textContent =
+                "Please switch MetaMask to Sepolia manually.";
+              ethPayBtn.disabled = false;
+              return;
+            }
+          }
+
+          if (
+            currentDeal.buyerEth &&
+            currentDeal.buyerEth.toLowerCase() !== userAddress.toLowerCase()
+          ) {
+            if (
+              !confirm(
+                "Warning: deal was configured with buyer ETH = " +
+                  currentDeal.buyerEth +
+                  " but connected wallet is " +
+                  userAddress +
+                  ". Continue anyway?"
+              )
+            ) {
+              ethPayStatus.textContent =
+                "Cancelled due to mismatch between wallet and configured buyer.";
+              ethPayBtn.disabled = false;
+              return;
+            }
+          }
+
+          const token = new ethers.Contract(
+            TOKEN_ADDRESS,
+            TOKEN_ABI,
+            signer
+          );
+          const escrow = new ethers.Contract(
+            ESCROW_ADDRESS,
+            ESCROW_ABI,
+            signer
+          );
+
+          const amountUnits = BigInt(currentDeal.amountUnits);
+          ethPayStatus.textContent =
+            "Sending approve for " +
+            currentDeal.totalPrice +
+            " USDT... (MetaMask popup)";
+
+          const txApprove = await token.approve(ESCROW_ADDRESS, amountUnits);
+          ethPayStatus.textContent =
+            "Waiting for approve tx to be mined (hash: " +
+            txApprove.hash +
+            ")...";
+          await txApprove.wait();
+
+          ethPayStatus.textContent =
+            "Sending deposit(dealId) to Escrow contract... (MetaMask popup)";
+          const txDeposit = await escrow.deposit(currentDeal.dealId);
+          ethPayStatus.textContent =
+            "Waiting for deposit tx to be mined (hash: " +
+            txDeposit.hash +
+            ")...";
+          await txDeposit.wait();
+
+          ethPayStatus.innerHTML =
+            "✅ Ethereum payment completed. View transaction on Etherscan: " +
+            `<a href="https://sepolia.etherscan.io/tx/${txDeposit.hash}" target="_blank">tx</a>`;
+
+          ethPayBtn.disabled = true;
+        } catch (err) {
+          console.error(err);
+          ethPayStatus.textContent = "Error in approve/deposit: " + err.message;
+          ethPayBtn.disabled = false;
+        }
+      }
+
+      ethPayBtn.addEventListener("click", approveAndDepositWithMetaMask);
+    </script>
+  </body>
+</html>
