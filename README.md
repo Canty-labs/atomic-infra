@@ -1,31 +1,28 @@
 # Canty - Infrastructure Built for Atomic Precision
 
 This repository contains the **Canty Validator** setup —  
-a full end-to-end escrow workflow running on **Canton**, bridged optionally to **Ethereum (Sepolia)** for on-chain settlement mirroring.
+a full end-to-end escrow workflow running on **Canton**, Atomic Precision optionally to **Ethereum (Sepolia)** for on-chain settlement mirroring.
 
 ## 🏗️ Overview
 The system demonstrates how cross-ledger deals can be coordinated between **Canton smart contracts** and **Ethereum contracts** (StablecoinEscrow + MockUSDT).
 
 It includes:
-- 💠 **DAML Contracts** — Escrow, Token, Parties templates
-- 🧠 **Flask Backend** — REST API bridge between Canton and Ethereum
-- ⚙️ **Canton Configuration** — `canton.conf` for local participant + domain setup
-- 🧪 **Demo Client** — simple test runner for end-to-end flow validation
+💠 **DAML Contracts** — Escrow, Token, Parties templates
+🧠 **Flask Backend** — REST API between Canton and Ethereum
+⚙️ **Canton Configuration** — `canton.conf` for local participant + domain setup
+🧪 **Demo Client** — simple test runner for end-to-end flow validation
 
----
 
 ## 🔧 Quick Start
 
-```bash
 # 1. Build the DAML package
 daml build
 
 # 2. Start Canton
 canton -c canton.conf
 
-# 3. Run the Flask bridge
+# 3. Run the Flask 
 python app.py
-Optional (if using Ethereum bridge):
 
 export ETH_RPC_URL="https://sepolia.infura.io/v3/..."
 export ETH_BROKER_PRIVATE_KEY="your_private_key"
@@ -37,7 +34,7 @@ Copy code
 │   ├── Token.daml
 │   ├── Parties.daml
 │   └── Demo.daml
-├── app.py              # Flask + bridge logic
+├── app.py              # Flask + logic
 ├── client.py           # Test client for API endpoints
 ├── canton.conf         # Canton participant/domain config
 ├── requirements.txt
@@ -65,6 +62,6 @@ Web3.py (Ethereum integration)
 Sepolia Testnet
 
 📜 License
-Private / Internal – © 2025 Canty Labs.
+Private / Internal © 2025 Canty Labs.
 
 
